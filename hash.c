@@ -27,7 +27,9 @@ struct hash{
 };
 
 struct hash_iter{
-    void* act;
+    hash_t* hash;
+    tabla_hash_t* act;
+    tabla_hash_t* ant;
 };
 //===============================Funcion de Hash===================================
  /*static unsigned long funcion_hash(const char *str)
@@ -267,11 +269,38 @@ void hash_destruir(hash_t *hash){
     return;
 }
 
-hash_iter_t *hash_iter_crear(const hash_t *hash);
+hash_iter_t *hash_iter_crear(const hash_t *hash){
+    hash_iter_t* iter = malloc(sizeof(hash_iter_t));
+    if (!iter) return NULL;
+    iter -> hash = hash;
+    iter ->ant = NULL;
+    iter ->act = NULL;
+    size_t i = 0;
+    while (hash ->tabla[i].estado != VACIO || hash ->tabla[i].estado != BORRADO){
+        i++;
+    }
+    iter -> act = &hash -> tabla[i];
+    return iter;
+}
 // Avanza iterador
-bool hash_iter_avanzar(hash_iter_t *iter);
+bool hash_iter_avanzar(hash_iter_t *iter){
+    size_t i = 0;
+    while (iter -> hash ->tabla[i].estado != VACIO || iter -> hash ->tabla[i].estado != BORRADO){
+        i++;
+    }
+    if (iter -> hash -> tabla[i].estado == VACIO || iter -> hash -> tabla[i].estado == BORRADO) return false;
+    iter -> ant = iter -> act;
+    iter -> act = &iter -> hash -> tabla[i];
+    return true;
+}
 // Devuelve clave actual, esa clave no se puede modificar ni liberar.
-const char *hash_iter_ver_actual(const hash_iter_t *iter);
+const char *hash_iter_ver_actual(const hash_iter_t *iter){
+    char* clave;
+    if (iter -> act) return NULL;
+    clave = malloc(sizeof(char)*strlen(iter->act->clave));
+    strcpy(clave,iter->act->clave);
+    return clave;
+}
 // Comprueba si terminó la iteración
 bool hash_iter_al_final(const hash_iter_t *iter);
 
