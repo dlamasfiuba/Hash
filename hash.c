@@ -28,8 +28,7 @@ struct hash{
 
 struct hash_iter{
     hash_t* hash;
-    tabla_hash_t* act;
-    tabla_hash_t* ant;
+    size_t pos;
 };
 //===============================Funcion de Hash===================================
  /*static unsigned long funcion_hash(const char *str)
@@ -110,10 +109,10 @@ size_t buscar_lugar(hash_t* hash,const char* clave,size_t indice,void* dato,bool
             break;
         }
         indice ++;
-        if(indice == hash -> capacidad -1) indice = 0;
+        if (indice == hash -> capacidad -1) indice = 0;
         if (contador == hash -> capacidad -1) return -1;
     }
-    if(insertar) llenar_campo(hash,clave,indice,dato);
+    if (insertar) llenar_campo(hash,clave,indice,dato);
     return indice;
 }
 
@@ -138,16 +137,10 @@ long int hash_buscar(const hash_t* hash,const char* clave){
                 indice = 0;
                 continue;
             }
-            indice ++;
-            
+            indice ++;   
         }
-
     }
-
     return -1;
-
-
-
 }
 //Funcion para saber si es necesario redimensionar
 bool densidad_tabla(hash_t* hash){
@@ -175,12 +168,9 @@ bool redimensionar_hash(hash_t* hash){
             hash_guardar(hash,tabla_aux[i].clave,tabla_aux[i].dato);
             free(tabla_aux[i].clave);
         }
-
     }
     free(tabla_aux);
     return true;
-
-    
 }
 
 
@@ -227,7 +217,6 @@ bool hash_guardar(hash_t* hash,const char* clave,void* dato){
     return true;
 }
 
-
 void* hash_borrar(hash_t *hash, const char *clave){
 
     size_t indice =  hash_buscar(hash,clave);
@@ -265,44 +254,46 @@ size_t hash_cantidad(const hash_t *hash){
 }
 
 
-void hash_destruir(hash_t *hash){
+void hash_destruir(hash_t *hash){//Falta destruir
     return;
 }
 
 hash_iter_t *hash_iter_crear(const hash_t *hash){
+    size_t i = 0;
+    if (!hash) return NULL;
     hash_iter_t* iter = malloc(sizeof(hash_iter_t));
     if (!iter) return NULL;
     iter -> hash = hash;
-    iter ->ant = NULL;
-    iter ->act = NULL;
-    size_t i = 0;
-    while (hash ->tabla[i].estado != VACIO || hash ->tabla[i].estado != BORRADO){
-        i++;
+    while (iter -> hash ->tabla[i].estado == VACIO || iter -> hash ->tabla[i].estado == BORRADO) i++;
+    if (i == iter -> hash -> capacidad -1){
+        free(iter);
+        return NULL;
     }
-    iter -> act = &hash -> tabla[i];
+    iter -> pos = i;
     return iter;
 }
 // Avanza iterador
 bool hash_iter_avanzar(hash_iter_t *iter){
     size_t i = 0;
-    while (iter -> hash ->tabla[i].estado != VACIO || iter -> hash ->tabla[i].estado != BORRADO){
-        i++;
-    }
+    while (iter -> hash ->tabla[i].estado == VACIO || iter -> hash ->tabla[i].estado == BORRADO) i++;
     if (iter -> hash -> tabla[i].estado == VACIO || iter -> hash -> tabla[i].estado == BORRADO) return false;
-    iter -> ant = iter -> act;
-    iter -> act = &iter -> hash -> tabla[i];
+    iter -> pos = i;
     return true;
 }
 // Devuelve clave actual, esa clave no se puede modificar ni liberar.
 const char *hash_iter_ver_actual(const hash_iter_t *iter){
-    char* clave;
-    if (iter -> act) return NULL;
-    clave = malloc(sizeof(char)*strlen(iter->act->clave));
-    strcpy(clave,iter->act->clave);
+    char* clave = malloc(sizeof(char)*strlen(iter -> hash -> tabla[iter -> pos].clave));
+    strcpy(clave,iter -> hash -> tabla[iter -> pos].clave);
     return clave;
 }
 // Comprueba si terminó la iteración
-bool hash_iter_al_final(const hash_iter_t *iter);
+bool hash_iter_al_final(const hash_iter_t *iter){
+    size_t i = 0;
+    while (iter -> hash ->tabla[i].estado == VACIO || iter -> hash ->tabla[i].estado == BORRADO) i++;
+    return (!i);
+}
 
 // Destruye iterador
-void hash_iter_destruir(hash_iter_t* iter);
+void hash_iter_destruir(hash_iter_t* iter){
+    free(iter);
+}
