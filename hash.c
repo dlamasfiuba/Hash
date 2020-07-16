@@ -165,6 +165,7 @@ bool redimensionar_hash(hash_t* hash){
     size_t capacidad_aux = hash -> capacidad;
     size_t nueva_capacidad = (size_t)_es_primo((long int) hash -> capacidad*2);
     hash -> capacidad = nueva_capacidad;
+    //Aca cambie algo que estaba al revez,  creaba la tabla antes de darle una capacidad nueva
     tabla_hash_t* nueva_tabla = crear_tabla(hash -> capacidad);
     if(!nueva_tabla) return false;
     hash -> tabla = nueva_tabla;
@@ -296,7 +297,7 @@ hash_iter_t *hash_iter_crear(const hash_t *hash){
     hash_iter_t* iter = malloc(sizeof(hash_iter_t));
     if (!iter) return NULL;
     iter -> hash = hash;
-    i = buscar_posicion_iter(i,hash);
+    i = buscar_posicion_iter(i,hash);//Hice esta funcion que creo que la podemos usar para modularizar un poquito mas en el resto de las funciones
     if (i == NO_ENCONTRADO){
         free(iter);
         return NULL;
