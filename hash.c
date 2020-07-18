@@ -172,17 +172,15 @@ bool redimensionar_hash(hash_t* hash){
     if(!nueva_tabla) return false;
     hash -> tabla = nueva_tabla;
     hash -> cant_borrados = 0;
+    hash -> cant_ocupados = 0;//No se porque poner esto en 0 provoca mas errores
     //hash -> cantidad = 0;
     iniciar_tabla(hash);
     /*size_t nueva_capacidad = (size_t)_es_primo((long int) hash -> capacidad*2);
     hash -> capacidad = nueva_capacidad;*/
     for(size_t i = 0;i < capacidad_aux;i++){
         if(tabla_aux[i].estado == OCUPADO){
-            size_t indice = hashing(hash,tabla_aux[i].clave);
-            hash -> tabla[indice].clave = tabla_aux[i].clave;
-            hash -> tabla[indice].dato = tabla_aux[i].dato;
-            hash -> tabla[indice].estado = OCUPADO;
-            //free(tabla_aux[i].clave);
+            hash_guardar(hash,tabla_aux[i].clave,tabla_aux[i].dato);
+            free(tabla_aux[i].clave);
             //destuir_campo(tabla_aux[i].clave,tabla_aux[i].dato,hash -> destruir_dato);
         }
 
