@@ -18,7 +18,6 @@ typedef struct tabla_hash{
 }tabla_hash_t;
 
 struct hash{
-    size_t cantidad;
     size_t capacidad;
     size_t cant_borrados;
     size_t cant_ocupados;
@@ -90,6 +89,7 @@ void llenar_campo(hash_t* hash,const char* clave,size_t indice,void* dato){
     hash -> tabla[indice].clave = aux;
     hash -> tabla[indice].dato = dato;
     hash -> tabla[indice].estado = OCUPADO;
+    hash -> cant_ocupados ++;
 
 }
 
@@ -163,21 +163,26 @@ size_t hashing(hash_t* hash,const char* clave){
 bool redimensionar_hash(hash_t* hash){
     tabla_hash_t* tabla_aux = hash -> tabla;
     size_t capacidad_aux = hash -> capacidad;
+    //Creo una capacidad nueva,cuyo valor sea un numero primo para tener menor probabilidad de colision
     size_t nueva_capacidad = (size_t)_es_primo((long int) hash -> capacidad*2);
     hash -> capacidad = nueva_capacidad;
-    //Aca cambie algo que estaba al revez,  creaba la tabla antes de darle una capacidad nueva
+    //Aca cambie algo que estaba al revez,  creaba la tabla antes de darle una capacidad 
+    hash -> cant_borrados = 0;
     tabla_hash_t* nueva_tabla = crear_tabla(hash -> capacidad);
     if(!nueva_tabla) return false;
     hash -> tabla = nueva_tabla;
-    hash -> cantidad = 0;
+    hash -> cant_borrados = 0;
+    //hash -> cantidad = 0;
     iniciar_tabla(hash);
-    //Creo una capacidad nueva,cuyo valor sea un numero primo para tener menor probabilidad de colision
     /*size_t nueva_capacidad = (size_t)_es_primo((long int) hash -> capacidad*2);
     hash -> capacidad = nueva_capacidad;*/
     for(size_t i = 0;i < capacidad_aux;i++){
         if(tabla_aux[i].estado == OCUPADO){
-            hash_guardar(hash,tabla_aux[i].clave,tabla_aux[i].dato);
-            free(tabla_aux[i].clave);
+            size_t indice = hashing(hash,tabla_aux[i].clave);
+            hash -> tabla[indice].clave = tabla_aux[i].clave;
+            hash -> tabla[indice].dato = tabla_aux[i].dato;
+            hash -> tabla[indice].estado = OCUPADO;
+            //free(tabla_aux[i].clave);
             //destuir_campo(tabla_aux[i].clave,tabla_aux[i].dato,hash -> destruir_dato);
         }
 
@@ -206,7 +211,7 @@ long buscar_posicion_iter(size_t indice,const hash_t* hash){
 hash_t* hash_crear(hash_destruir_dato_t destruir_dato){
     hash_t* hash = malloc(sizeof(hash_t));
     if(!hash) return NULL;
-    hash -> cantidad = 0;
+    //hash -> cantidad = 0;
     hash -> capacidad = CAPACIDAD_INICIAL;
     hash -> cant_borrados = 0;
     hash -> cant_ocupados = 0;
@@ -229,14 +234,13 @@ bool hash_guardar(hash_t* hash,const char* clave,void* dato){
     //Si el indice de la tabla esta ocupado,busco lugar
     else if (hash -> tabla[indice].estado == OCUPADO){
         if (buscar_lugar(hash,clave,indice,dato,true) == NO_ENCONTRADO) return false;
-        hash -> cant_ocupados ++;
-        hash -> cantidad ++;
+        //hash -> cantidad ++;
     }
     //Si el indice en la tabla esta vacio,pongo la clave y el dato
     else if(hash -> tabla[indice].estado == VACIO || hash -> tabla[indice].estado == BORRADO){
         llenar_campo(hash,clave,indice,dato);
-        hash -> cant_ocupados ++;
-        hash -> cantidad ++;
+
+        //hash -> cantidad ++;
 
     }
     return true;
@@ -247,14 +251,13 @@ void* hash_borrar(hash_t *hash, const char *clave){
     size_t indice =  hash_buscar(hash,clave);
     if (indice == NO_ENCONTRADO) return NULL;
     void* aux = hash -> tabla[indice].dato;
+    destuir_campo(hash -> tabla[indice].clave,hash -> tabla[indice].dato,hash -> destruir_dato);
     hash -> tabla[indice].clave = NULL;
     hash -> tabla[indice].dato = NULL;
     hash -> tabla[indice].estado = BORRADO;
-    hash -> cantidad --;
+   // hash -> cantidad --;
     hash -> cant_ocupados --;
     hash -> cant_borrados ++;
-
-
     return aux;
 }
 
@@ -275,7 +278,8 @@ bool hash_pertenece(const hash_t *hash, const char *clave){
 
 
 size_t hash_cantidad(const hash_t *hash){
-    return hash -> cantidad;
+   // return hash -> cantidad;
+   return hash -> cant_ocupados;
 }
 
 
