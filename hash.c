@@ -209,7 +209,6 @@ long buscar_posicion_iter(size_t indice,const hash_t* hash){
 hash_t* hash_crear(hash_destruir_dato_t destruir_dato){
     hash_t* hash = malloc(sizeof(hash_t));
     if(!hash) return NULL;
-    //hash -> cantidad = 0;
     hash -> capacidad = CAPACIDAD_INICIAL;
     hash -> cant_borrados = 0;
     hash -> cant_ocupados = 0;
@@ -251,7 +250,6 @@ void* hash_borrar(hash_t *hash, const char *clave){
     hash -> tabla[indice].clave = NULL;
     hash -> tabla[indice].dato = NULL;
     hash -> tabla[indice].estado = BORRADO;
-   // hash -> cantidad --;
     hash -> cant_ocupados --;
     hash -> cant_borrados ++;
     return aux;
@@ -274,7 +272,6 @@ bool hash_pertenece(const hash_t *hash, const char *clave){
 
 
 size_t hash_cantidad(const hash_t *hash){
-   // return hash -> cantidad;
    return hash -> cant_ocupados;
 }
 
@@ -299,14 +296,17 @@ hash_iter_t *hash_iter_crear(const hash_t *hash){
     iter -> hash = hash;
     i = buscar_posicion_iter(i,hash);//Hice esta funcion que creo que la podemos usar para modularizar un poquito mas en el resto de las funciones
     if (i == NO_ENCONTRADO){
-        free(iter);
-        return NULL;
+        //free(iter);
+        //return NULL;
+        iter -> pos = -1;
+        return iter;
     }
     iter -> pos = i;
     return iter;
 }
 // Avanza iterador
 bool hash_iter_avanzar(hash_iter_t *iter){
+    if (!iter || iter->pos == -1) return false;
     size_t i = 0;
     while (iter -> hash ->tabla[i].estado == VACIO || iter -> hash ->tabla[i].estado == BORRADO) i++;
     if (iter -> hash -> tabla[i].estado == VACIO || iter -> hash -> tabla[i].estado == BORRADO) return false;
@@ -315,12 +315,14 @@ bool hash_iter_avanzar(hash_iter_t *iter){
 }
 // Devuelve clave actual, esa clave no se puede modificar ni liberar.
 const char *hash_iter_ver_actual(const hash_iter_t *iter){
+    if (!iter || iter->pos == -1) return NULL;
     char* clave = malloc(sizeof(char)*strlen(iter -> hash -> tabla[iter -> pos].clave));
     strcpy(clave,iter -> hash -> tabla[iter -> pos].clave);
     return clave;
 }
 // Comprueba si terminó la iteración
 bool hash_iter_al_final(const hash_iter_t *iter){
+    if (!iter || iter->pos == -1) return true;
     size_t i = 0;
     while (iter -> hash ->tabla[i].estado == VACIO || iter -> hash ->tabla[i].estado == BORRADO) i++;
     return (!i);
