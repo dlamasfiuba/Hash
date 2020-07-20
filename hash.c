@@ -198,7 +198,6 @@ long buscar_posicion_iter(size_t indice,const hash_t* hash){
 hash_t* hash_crear(hash_destruir_dato_t destruir_dato){
     hash_t* hash = malloc(sizeof(hash_t));
     if(!hash) return NULL;
-    //hash -> cantidad = 0;
     hash -> capacidad = CAPACIDAD_INICIAL;
     hash -> cant_borrados = 0;
     hash -> cant_ocupados = 0;
@@ -240,7 +239,6 @@ void* hash_borrar(hash_t *hash, const char *clave){
     hash -> tabla[indice].clave = NULL;
     hash -> tabla[indice].dato = NULL;
     hash -> tabla[indice].estado = BORRADO;
-   // hash -> cantidad --;
     hash -> cant_ocupados --;
     hash -> cant_borrados ++;
     return aux;
@@ -263,7 +261,6 @@ bool hash_pertenece(const hash_t *hash, const char *clave){
 
 
 size_t hash_cantidad(const hash_t *hash){
-   // return hash -> cantidad;
    return hash -> cant_ocupados;
 }
 
