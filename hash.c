@@ -7,6 +7,7 @@
 #define FACTOR_CARGA 0.40
 #define CAPACIDAD_INICIAL 181
 #define NO_ENCONTRADO -1
+#define HASH_VACIO 0
 
 //Defino estructuras
 typedef enum{VACIO,BORRADO,OCUPADO} estado_t;
@@ -181,18 +182,18 @@ bool redimensionar_hash(hash_t* hash){
 }
 
 long buscar_posicion_iter(size_t indice,const hash_t* hash){
-    for(size_t contador = 0;contador < hash -> capacidad;contador ++){
-        if(hash -> tabla[indice].estado == VACIO || hash -> tabla[indice].estado == BORRADO) continue;
-        else if(hash -> tabla[indice].estado == OCUPADO) return indice;
-        indice ++;
+    for(size_t contador = indice;contador < hash -> capacidad;contador ++){
+        if(hash -> tabla[contador].estado != OCUPADO){
+            continue;
+        }else return contador;
     }
-    return NO_ENCONTRADO;
+    return hash -> capacidad;
 }
 
 
 
 
-//===========================Primitivas=============================
+//===========================Primitivas Hash=============================
 
 
 hash_t* hash_crear(hash_destruir_dato_t destruir_dato){
@@ -276,6 +277,7 @@ void hash_destruir(hash_t *hash){
     free(hash);
     
 }
+//===========================Primitivas Iter=============================
 
 hash_iter_t *hash_iter_crear(const hash_t *hash){
     size_t i = 0;
@@ -283,39 +285,29 @@ hash_iter_t *hash_iter_crear(const hash_t *hash){
     if (!iter) return NULL;
     iter -> hash = hash;
     i = buscar_posicion_iter(i,hash);//Hice esta funcion que creo que la podemos usar para modularizar un poquito mas en el resto de las funciones
-    if (i == NO_ENCONTRADO){
-        //free(iter);
-        //return NULL;
-        iter -> pos = -1;
-        return iter;
-    }
     iter -> pos = i;
     return iter;
 }
 // Avanza iterador
 bool hash_iter_avanzar(hash_iter_t *iter){
-    if (!iter || iter->pos == -1) return false;
-    size_t i = 0;
-    while (iter -> hash ->tabla[i].estado == VACIO || iter -> hash ->tabla[i].estado == BORRADO) i++;
-    if (iter -> hash -> tabla[i].estado == VACIO || iter -> hash -> tabla[i].estado == BORRADO) return false;
+    if (hash_iter_al_final(iter)) return false;
+    //size_t i = iter -> pos;
+    size_t i = buscar_posicion_iter(iter -> pos + 1,iter -> hash);
+    //if (i == NO_ENCONTRADO) return false;
     iter -> pos = i;
     return true;
 }
 // Devuelve clave actual, esa clave no se puede modificar ni liberar.
 const char *hash_iter_ver_actual(const hash_iter_t *iter){
-    if (!iter || iter->pos == -1) return NULL;
-    char* clave = malloc(sizeof(char)*strlen(iter -> hash -> tabla[iter -> pos].clave));
-    strcpy(clave,iter -> hash -> tabla[iter -> pos].clave);
-    return clave;
+    if (hash_iter_al_final(iter)) return NULL;
+    
+    return iter -> hash -> tabla[iter -> pos].clave;
 }
 // Comprueba si terminó la iteración
 bool hash_iter_al_final(const hash_iter_t *iter){
-    if (!iter || iter->pos == -1) return true;
-    size_t i = 0;
-    while (iter -> hash ->tabla[i].estado == VACIO || iter -> hash ->tabla[i].estado == BORRADO) i++;
-    return (!i);
+    if(iter -> hash -> cant_ocupados == HASH_VACIO) return true;
+    return iter -> pos == iter -> hash -> capacidad;
 }
-
 // Destruye iterador
 void hash_iter_destruir(hash_iter_t* iter){
     free(iter);
