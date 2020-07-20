@@ -5,7 +5,7 @@
 #include <string.h>
 #include "hash.h"
 #define FACTOR_CARGA 0.40
-#define CAPACIDAD_INICIAL 8
+#define CAPACIDAD_INICIAL 181
 #define NO_ENCONTRADO -1
 
 //Defino estructuras
@@ -118,7 +118,8 @@ size_t buscar_lugar(hash_t* hash,const char* clave,size_t indice,void* dato,bool
             continue;
         }
         if (contador == hash -> capacidad -1) return NO_ENCONTRADO;
-        indice ++;
+        contador ++;
+        indice = (indice + contador) % hash -> capacidad;
     }
     if (insertar) llenar_campo(hash,clave,indice,dato);
     return indice;
@@ -127,26 +128,18 @@ size_t buscar_lugar(hash_t* hash,const char* clave,size_t indice,void* dato,bool
 //Funcion para buscar clave en la tabla 
 //Devuelvo true si encuentro la clave
 //Devuelvo false si determino que  la clave no esta
-long int hash_buscar(const hash_t* hash,const char* clave){
-    long int indice = funcion_hash(clave) % hash -> capacidad;
-    //Si la primer posicion que verifica es falsa,la clave no esta
-    if(hash -> tabla[indice].estado == VACIO) return NO_ENCONTRADO;
-    else{
-        for(long int contador = 0;contador < hash -> capacidad;contador ++){
-            //Si esta ocupado y no es la clave que busco,continuo con la iteracion
-            if ((hash -> tabla[indice].estado == OCUPADO && strcmp(hash -> tabla[indice].clave,clave)) || (hash -> tabla[indice].estado == BORRADO )) continue;
-            //Si hay un lugar vacio,la clave no esta
-            else if (hash -> tabla[indice].estado == VACIO) return NO_ENCONTRADO;
-            //Si una clave coincide,devuelvo que esta
-            else if ((hash -> tabla[indice].estado == OCUPADO) && !strcmp( hash -> tabla[indice].clave , clave)) return indice;
+size_t hash_buscar(const hash_t* hash,const char* clave){
+    size_t indice = funcion_hash(clave);
+    for(size_t contador = 0;contador < hash -> capacidad;contador ++){
+        indice = (indice + contador) % hash->capacidad;
+        //Si esta borrado, continuo con la busqueda
+        if ((hash -> tabla[indice].estado == BORRADO )) continue;
+        //Si una clave coincide,devuelvo que esta
+        else if (hash -> tabla[indice].estado == OCUPADO && !strcmp( hash -> tabla[indice].clave , clave)) return indice;
             
-            if (indice == hash -> capacidad -1) {
-                indice = 0;
-                continue;
-            }
-            indice ++;   
+  
         }
-    }
+   // }
     return NO_ENCONTRADO;
 }
 //Funcion para saber si es necesario redimensionar
@@ -166,17 +159,13 @@ bool redimensionar_hash(hash_t* hash){
     size_t capacidad_aux = hash -> capacidad;
     //Creo una capacidad nueva,cuyo valor sea un numero primo para tener menor probabilidad de colision
     size_t nueva_capacidad = (size_t)_es_primo((long int) hash -> capacidad*2);
+    //Pongo los nuevos datos del hash
     hash -> capacidad = nueva_capacidad;
-    //Aca cambie algo que estaba al revez,  creaba la tabla antes de darle una capacidad 
     hash -> cant_borrados = 0;
-    tabla_hash_t* nueva_tabla = crear_tabla(hash -> capacidad);
-    if(!nueva_tabla) return false;
-    hash -> tabla = nueva_tabla;
+    hash -> tabla = crear_tabla(nueva_capacidad);
     hash -> cant_ocupados = 0;
     //hash -> cantidad = 0;
     iniciar_tabla(hash);
-    /*size_t nueva_capacidad = (size_t)_es_primo((long int) hash -> capacidad*2);
-    hash -> capacidad = nueva_capacidad;*/
     for(size_t i = 0;i < capacidad_aux;i++){
         if(tabla_aux[i].estado == OCUPADO){
             hash_guardar(hash,tabla_aux[i].clave,tabla_aux[i].dato);
@@ -291,7 +280,6 @@ void hash_destruir(hash_t *hash){
     
 }
 
-
 hash_iter_t *hash_iter_crear(const hash_t *hash){
     size_t i = 0;
     hash_iter_t* iter = malloc(sizeof(hash_iter_t));
@@ -299,14 +287,17 @@ hash_iter_t *hash_iter_crear(const hash_t *hash){
     iter -> hash = hash;
     i = buscar_posicion_iter(i,hash);//Hice esta funcion que creo que la podemos usar para modularizar un poquito mas en el resto de las funciones
     if (i == NO_ENCONTRADO){
-        free(iter);
-        return NULL;
+        //free(iter);
+        //return NULL;
+        iter -> pos = -1;
+        return iter;
     }
     iter -> pos = i;
     return iter;
 }
 // Avanza iterador
 bool hash_iter_avanzar(hash_iter_t *iter){
+    if (!iter || iter->pos == -1) return false;
     size_t i = 0;
     while (iter -> hash ->tabla[i].estado == VACIO || iter -> hash ->tabla[i].estado == BORRADO) i++;
     if (iter -> hash -> tabla[i].estado == VACIO || iter -> hash -> tabla[i].estado == BORRADO) return false;
@@ -315,12 +306,14 @@ bool hash_iter_avanzar(hash_iter_t *iter){
 }
 // Devuelve clave actual, esa clave no se puede modificar ni liberar.
 const char *hash_iter_ver_actual(const hash_iter_t *iter){
+    if (!iter || iter->pos == -1) return NULL;
     char* clave = malloc(sizeof(char)*strlen(iter -> hash -> tabla[iter -> pos].clave));
     strcpy(clave,iter -> hash -> tabla[iter -> pos].clave);
     return clave;
 }
 // Comprueba si terminó la iteración
 bool hash_iter_al_final(const hash_iter_t *iter){
+    if (!iter || iter->pos == -1) return true;
     size_t i = 0;
     while (iter -> hash ->tabla[i].estado == VACIO || iter -> hash ->tabla[i].estado == BORRADO) i++;
     return (!i);
@@ -330,3 +323,5 @@ bool hash_iter_al_final(const hash_iter_t *iter){
 void hash_iter_destruir(hash_iter_t* iter){
     free(iter);
 }
+
+
